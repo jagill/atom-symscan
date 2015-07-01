@@ -31,17 +31,18 @@ module.exports = Symscan =
     @subscriptions.add atom.commands.add 'atom-workspace', 'symscan:nextSymbol': => @nextSymbol()
     @subscriptions.add atom.commands.add 'atom-workspace', 'symscan:markSymbol': => @markSymbol()
     @subscriptions.add atom.commands.add 'atom-workspace', 'symscan:clearMarks': => @clearMarks()
+    @subscriptions.add atom.commands.add 'atom-workspace', 'symscan:clearAllMarks': => @clearAllMarks()
 
     # Map of path to symbols; symbols are a map of name to list of positions (Points)
     @symbolIndex = {}
     # Keep track of highlight marks, so we can destroy them properly
-    @marks = []
+    @marks = {}
 
   deactivate: ->
     @modalPanel.destroy()
     @subscriptions.dispose()
     @symscanView.destroy()
-    @clearMarks()
+    @clearAllMarks()
 
   serialize: ->
     symscanViewState: @symscanView.serialize()
@@ -62,7 +63,6 @@ module.exports = Symscan =
   _getSymbols: (word) ->
     editor = atom.workspace.getActivePaneItem()
     word = word or getCurrentWord()
-    console.log 'WORD ' + word
     return {} unless word
     filepath = editor.getPath()
     unless filepath of @symbolIndex
@@ -91,20 +91,29 @@ module.exports = Symscan =
     editor = atom.workspace.getActivePaneItem()
     editor.setCursorBufferPosition pos if pos
 
-  clearMarks: ->
-    for mark in @marks
+  clearMarks: (word) ->
+    word = word or getCurrentWord()
+    return unless word of @marks
+    for mark in @marks[word]
       mark.destroy()
-    @marks = []
+    delete @marks[word]
+
+  clearAllMarks: ->
+    @clearMarks(word) for word of @marks
 
   markSymbol: ->
-    @clearMarks()
     editor = atom.workspace.getActivePaneItem()
     word = getCurrentWord()
-    symbols = @_getSymbols(word)
+    return unless word
+    if word of @marks
+      @clearMarks word
+      return
+    @marks[word] = []
+    symbols = @_getSymbols word
     for pos in symbols
       endPos = new Point(pos.row, pos.column + word.length)
       range = new Range(pos, endPos)
       marker = editor.markBufferRange(range)
       decoration = editor.decorateMarker(marker,
             {type: 'highlight', class: 'highlight-selected'})
-      @marks.push marker
+      @marks[word].push marker

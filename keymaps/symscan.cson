@@ -13,4 +13,4 @@
   'ctrl-alt-b': 'symscan:prevSymbol'
   'ctrl-alt-n': 'symscan:nextSymbol'
   'ctrl-alt-m': 'symscan:markSymbol'
-  'ctrl-alt-shift-m': 'symscan:clearMarks'
+  'ctrl-alt-shift-m': 'symscan:clearAllMarks'
