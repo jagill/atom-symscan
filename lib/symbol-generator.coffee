@@ -16,6 +16,7 @@ BLACKLIST_REGEXPS = [
   /^meta.brace/,
   /^meta.delimiter/,
   /^storage.type/,
+  /^storage.modifier/,
   /^support.function/,
 ]
 
