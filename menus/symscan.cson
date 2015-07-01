@@ -1,0 +1,38 @@
+# See https://atom.io/docs/latest/hacking-atom-package-word-count#menus for more details
+'context-menu':
+  'atom-text-editor': [
+    {
+      'label': 'Generate Symbols'
+      'command': 'symscan:generate'
+    },
+    {
+      'label': 'Previous Symbols'
+      'command': 'symscan:prevSymbol'
+    },
+    {
+      'label': 'Next Symbols'
+      'command': 'symscan:nextSymbol'
+    },
+  ]
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'symscan'
+      'submenu': [
+        {
+          'label': 'Generate Symbols'
+          'command': 'symscan:generate'
+        },
+        {
+          'label': 'Previous Symbols'
+          'command': 'symscan:prevSymbol'
+        },
+        {
+          'label': 'Next Symbols'
+          'command': 'symscan:nextSymbol'
+        }
+      ]
+    ]
+  }
+]
