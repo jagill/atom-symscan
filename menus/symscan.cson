@@ -6,14 +6,26 @@
       'command': 'symscan:generate'
     },
     {
-      'label': 'Previous Symbols'
+      'label': 'First Symbol'
+      'command': 'symscan:firstSymbol'
+    },
+    {
+      'label': 'Previous Symbol'
       'command': 'symscan:prevSymbol'
     },
     {
-      'label': 'Next Symbols'
+      'label': 'Next Symbol'
       'command': 'symscan:nextSymbol'
     },
-  ]
+    {
+      'label': 'Mark Symbol'
+      'command': 'symscan:markSymbol'
+    },
+    {
+      'label': 'Clear Marks'
+      'command': 'symscan:clearMarks'
+    },
+]
 'menu': [
   {
     'label': 'Packages'
@@ -25,13 +37,25 @@
           'command': 'symscan:generate'
         },
         {
-          'label': 'Previous Symbols'
+          'label': 'First Symbol'
+          'command': 'symscan:firstSymbol'
+        },
+        {
+          'label': 'Previous Symbol'
           'command': 'symscan:prevSymbol'
         },
         {
-          'label': 'Next Symbols'
+          'label': 'Next Symbol'
           'command': 'symscan:nextSymbol'
-        }
+        },
+        {
+          'label': 'Mark Symbol'
+          'command': 'symscan:markSymbol'
+        },
+        {
+          'label': 'Clear Marks'
+          'command': 'symscan:clearMarks'
+        },
       ]
     ]
   }
