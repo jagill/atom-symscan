@@ -1,6 +1,7 @@
 SymscanView = require './symscan-view'
 {CompositeDisposable, Point, Range} = require 'atom'
 {parseSymbols, findPrevNext} = require './symbol-generator'
+{SymbolMarks} = require './symbol-marks'
 
 wordRe = /\w+/
 
@@ -27,13 +28,13 @@ module.exports = Symscan =
     # Map of path to symbols; symbols are a map of name to list of positions (Points)
     @symbolIndex = {}
     # Keep track of highlight marks, so we can destroy them properly
-    @marks = {}
+    @marks = new SymbolMarks()
 
     @symscanView = new SymscanView(state.symscanViewState)
     @modalPanel = atom.workspace.addModalPanel(item: @symscanView.getElement(), visible: false)
 
     # Events subscribed to in atom's system can be easily cleaned up with a CompositeDisposable
-    @subscriptions = new CompositeDisposable
+    @subscriptions = new CompositeDisposable()
 
     # Register command that toggles this view
     @subscriptions.add atom.commands.add 'atom-workspace', 'symscan:generate': => @generate()
@@ -114,31 +115,18 @@ module.exports = Symscan =
     editor.setCursorBufferPosition pos if pos
 
   clearMarks: (word) ->
-    word = word or getCurrentWord()
-    return unless word of @marks
-    for mark in @marks[word]
-      mark.destroy()
-    delete @marks[word]
+    @marks.clear word
 
   clearAllMarks: ->
-    @clearMarks(word) for word of @marks
+    @marks.clearAll()
 
   markSymbol: ->
     editor = atom.workspace.getActivePaneItem()
     word = getCurrentWord()
     return unless word
-    if word of @marks
+    if @marks.has word
+      console.log 'Clearing marks for ' + word
       @clearMarks word
       return
-    @_markSymbol editor, word
-
-  _markSymbol: (editor, word) ->
-    @marks[word] = []
     symbols = @_getSymbols word
-    for pos in symbols
-      endPos = endOfWord pos, word
-      range = new Range(pos, endPos)
-      marker = editor.markBufferRange(range)
-      decoration = editor.decorateMarker(marker,
-            {type: 'highlight', class: 'highlight-selected'})
-      @marks[word].push marker
+    @marks.markSymbol editor, word, symbols
