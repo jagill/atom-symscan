@@ -1,4 +1,4 @@
-{findPrevNext} = require '../lib/symbol-index'
+{findPrevNext} = require '../lib/symbol-generator'
 {Point} = require 'atom'
 
 describe 'findPrevNext', ->

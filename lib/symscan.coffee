@@ -1,10 +1,10 @@
 SymscanView = require './symscan-view'
 {CompositeDisposable, Point, Range} = require 'atom'
-{parseSymbols} = require './symbol-generator'
-{findPrevNext} = require './symbol-index'
+{parseSymbols, findPrevNext} = require './symbol-generator'
 
 wordRe = /\w+/
 
+# Get word under cursor, if any.
 getCurrentWord = ->
   editor = atom.workspace.getActivePaneItem()
   word = editor.getWordUnderCursor()
@@ -12,12 +12,23 @@ getCurrentWord = ->
   match = wordRe.exec(word)
   return match and match[0]
 
+# Return the point corresponding to the end of the word.
+# wordBegin:Point is the beginning of the word
+# word:String is the word
+endOfWord = (wordBegin, word) ->
+  return new Point(wordBegin.row, wordBegin.column + word.length)
+
 module.exports = Symscan =
   symscanView: null
   modalPanel: null
   subscriptions: null
 
   activate: (state) ->
+    # Map of path to symbols; symbols are a map of name to list of positions (Points)
+    @symbolIndex = {}
+    # Keep track of highlight marks, so we can destroy them properly
+    @marks = {}
+
     @symscanView = new SymscanView(state.symscanViewState)
     @modalPanel = atom.workspace.addModalPanel(item: @symscanView.getElement(), visible: false)
 
@@ -33,10 +44,15 @@ module.exports = Symscan =
     @subscriptions.add atom.commands.add 'atom-workspace', 'symscan:clearMarks': => @clearMarks()
     @subscriptions.add atom.commands.add 'atom-workspace', 'symscan:clearAllMarks': => @clearAllMarks()
 
-    # Map of path to symbols; symbols are a map of name to list of positions (Points)
-    @symbolIndex = {}
-    # Keep track of highlight marks, so we can destroy them properly
-    @marks = {}
+    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
+      editor.onDidStopChanging =>
+        console.log "Re-generating for #{editor?.getPath()}"
+        @generate editor
+
+    @subscriptions.add atom.workspace.observePanes (pane) =>
+      console.log "Got pane Active item", pane.getActiveItem()?.getPath()
+      @subscriptions.add pane.onDidChangeActiveItem (item) =>
+        console.log "Changed Active item", item.getPath()
 
   deactivate: ->
     @modalPanel.destroy()
@@ -54,8 +70,8 @@ module.exports = Symscan =
     else
       @modalPanel.show()
 
-  generate: ->
-    editor = atom.workspace.getActivePaneItem()
+  generate: (editor) ->
+    editor = editor or atom.workspace.getActivePaneItem()
     filepath = editor.getPath()
     symbols = parseSymbols editor.getGrammar(), editor.getText()
     @symbolIndex[filepath] = symbols
@@ -70,11 +86,17 @@ module.exports = Symscan =
     return @symbolIndex[filepath][word]
 
   _gotoNextPrevSymbol: (prev=true) ->
-    symbols = @_getSymbols()
+    word = getCurrentWord()
+    symbols = @_getSymbols word
     editor = atom.workspace.getActivePaneItem()
-    prevNext = findPrevNext editor.getCursorBufferPosition(), symbols
+    currentPos = editor.getCursorBufferPosition()
+    prevNext = findPrevNext currentPos, symbols
     if prev
       pos = prevNext.prev
+      if pos and currentPos.isLessThanOrEqual(endOfWord(pos, word))
+        # We're inside this word, let's actually go to two previous.
+        twoPrev = findPrevNext(pos, symbols).prev
+        pos = twoPrev or pos
     else
       pos = prevNext.next
     editor.setCursorBufferPosition pos if pos
@@ -108,10 +130,13 @@ module.exports = Symscan =
     if word of @marks
       @clearMarks word
       return
+    @_markSymbol editor, word
+
+  _markSymbol: (editor, word) ->
     @marks[word] = []
     symbols = @_getSymbols word
     for pos in symbols
-      endPos = new Point(pos.row, pos.column + word.length)
+      endPos = endOfWord pos, word
       range = new Range(pos, endPos)
       marker = editor.markBufferRange(range)
       decoration = editor.decorateMarker(marker,
