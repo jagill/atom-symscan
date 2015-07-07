@@ -8,42 +8,50 @@ endOfWord = (wordBegin, word) ->
   return new Point(wordBegin.row, wordBegin.column + word.length)
 
 exports.SymbolMarks = class SymbolMarks
-  constructor: ->
+  constructor: (@symbols) ->
+    # Names are the list of names we want to mark.  This is the point of truth.
+    # TODO Colors
+    @names = []
+    # These are the actual UI marks used; we generate this from @names.
     # marks = name:{color:, paths:{path:[marks]}}
     @marks = {}
-    # TODO Colors
 
-  _destroy: (name, path) ->
-    marks = @marks[name]?.paths[path]
-    return unless marks
-    mark.destroy() for mark in marks
+  _removeName: (name) ->
+    index = @names.indexOf name
+    @names.splice(index, 1) if index > -1
 
   clear: (name) ->
     return unless name of @marks
-    for path of @marks[name].paths
-      @_destroy name, path
+    mark.destroy() for mark in @marks[name]
     delete @marks[name]
+    @_removeName name
 
   clearAll: ->
     for name of @marks
       @clear name
 
+  # Do we have marks for the given name
   has: (name) ->
-    return name of @marks
+    return @names.indexOf(name) > -1
 
-  markSymbol: (editor, name, symbols) ->
-    # XXX: Do we need to watch out for name=='constructor' here?
-    path = editor.getPath()
+  mark: (name) ->
     symbolMarks = []
-    for pos in symbols
-      endPos = endOfWord pos, name
-      range = new Range(pos, endPos)
-      marker = editor.markBufferRange(range)
-      decoration = editor.decorateMarker(marker,
-            {type: 'highlight', class: 'highlight-selected'})
-      symbolMarks.push marker
+    for pane in atom.workspace.getPanes()
+      editor = pane.getActiveItem()
+      continue unless editor
+      symbols = @symbols.retrieve name, editor
+      for pos in symbols
+        endPos = endOfWord pos, name
+        range = new Range(pos, endPos)
+        marker = editor.markBufferRange(range)
+        decoration = editor.decorateMarker(marker,
+              {type: 'highlight', class: 'highlight-selected'})
+        symbolMarks.push marker
 
-    @marks[name] = {paths:{}} unless name of @marks
-    if path of @marks[name].paths
-      @_destroy name, path
-    @marks[name].paths[path] = symbolMarks
+    if name of @marks
+      mark.destroy() for mark in @marks[name]
+
+    @marks[name] = symbolMarks
+
+  regenerate: ->
+    @mark name for name in @names

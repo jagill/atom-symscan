@@ -25,30 +25,6 @@ BLACKLIST_REGEXP = /// ^ (
 
 wordRegexp = /\w+/g
 
-###*
-Return a dictionary of symbols to lists of positions (as a `Point`)
-Eg, `{foo: [(0, 0), (0, 40), (3, 5), ...]}`, where `(x, y)` represents
-`new Point(x, y)`.
-###
-exports.parseSymbols = (grammar, text) ->
-  tick = Date.now()
-  lines = grammar.tokenizeLines(text)
-  symbols = {}
-  prev = null
-  for tokens, linenum in lines
-    offset = 0
-    for token in tokens
-      syms = findSymbolsInToken token
-      for symbol in syms
-        name = symbol.name
-        # FIXME HACK: constructor is a property of symbols already. Bad JS!
-        continue if name is 'constructor'
-        symbols[name] = [] unless symbols[name]
-        symbols[name].push new Point(linenum, offset + symbol.offsetMod)
-      offset +=  token.value.length
-  console.log "Parsing symbols took #{Date.now() - tick} ms"
-  return symbols
-
 # Return an array (possibly empty) of symbols in the token.
 # TODO: When possible add definition/assignment info.
 findSymbolsInToken = (token) ->
@@ -66,6 +42,48 @@ shouldParse = (scopes) ->
 
   return true
 
+
+###*
+Return a dictionary of symbols to lists of positions (as a `Point`)
+Eg, `{foo: [(0, 0), (0, 40), (3, 5), ...]}`, where `(x, y)` represents
+`new Point(x, y)`.
+###
+module.exports = class Symbols
+  constructor: ->
+    @index = {}
+
+  generate: (editor) ->
+    editor = editor
+    filepath = editor.getPath()
+    symbols = Symbols.parseSymbols editor.getGrammar(), editor.getText()
+    @index[filepath] = symbols
+
+  retrieve: (word, editor) ->
+    return {} unless word
+    filepath = editor.getPath()
+    unless filepath of @index
+      @generate editor
+    return @index[filepath][word] ? []
+
+Symbols.parseSymbols = (grammar, text) ->
+    tick = Date.now()
+    lines = grammar.tokenizeLines(text)
+    symbols = {}
+    prev = null
+    for tokens, linenum in lines
+      offset = 0
+      for token in tokens
+        syms = findSymbolsInToken token
+        for symbol in syms
+          name = symbol.name
+          # FIXME HACK: constructor is a property of symbols already. Bad JS!
+          continue if name is 'constructor'
+          symbols[name] = [] unless symbols[name]
+          symbols[name].push new Point(linenum, offset + symbol.offsetMod)
+        offset +=  token.value.length
+    console.log "Parsing symbols took #{Date.now() - tick} ms"
+    return symbols
+
 ###*
 Given a position (point) and an ordered list of points, find the points in the
 list that are immediately before and after the position.  These can be
@@ -74,27 +92,27 @@ position.
 
 Return a map {prev:, next:} .
 ###
-exports.findPrevNext = (position, points) ->
-  return {} unless points and points.length
+Symbols.findPrevNext = (position, points) ->
+    return {} unless points and points.length
 
-  prev = 0
-  next = points.length - 1
+    prev = 0
+    next = points.length - 1
 
-  # Begin the binary search!
-  while next > prev
-    middle = (prev + next) // 2
-    switch position.compare(points[middle])
+    # Begin the binary search!
+    while next > prev
+      middle = (prev + next) // 2
+      switch position.compare(points[middle])
+        when 0
+          prev = next = middle
+        when -1
+          next = middle
+        when 1
+          prev = middle + 1
+
+    switch position.compare(points[prev])
       when 0
-        prev = next = middle
+        return {prev: points[prev-1], next: points[prev+1]}
       when -1
-        next = middle
+        return {prev: points[prev-1], next: points[prev]}
       when 1
-        prev = middle + 1
-
-  switch position.compare(points[prev])
-    when 0
-      return {prev: points[prev-1], next: points[prev+1]}
-    when -1
-      return {prev: points[prev-1], next: points[prev]}
-    when 1
-      return {prev: points[prev], next: points[prev+1]}
+        return {prev: points[prev], next: points[prev+1]}
