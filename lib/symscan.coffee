@@ -1,5 +1,5 @@
 SymscanView = require './symscan-view'
-{CompositeDisposable, Point, Range} = require 'atom'
+{CompositeDisposable, Point, Range, TextEditor} = require 'atom'
 Symbols = require './symbol-generator'
 {SymbolMarks} = require './symbol-marks'
 
@@ -49,12 +49,12 @@ module.exports = Symscan =
       editor.onDidStopChanging =>
         console.log "Re-generating for #{editor?.getPath()}"
         @symbols.generate editor
+        @marks.regenerate()
 
     @subscriptions.add atom.workspace.observePanes (pane) =>
-      console.log "Got pane Active item", pane.getActiveItem()?.getPath()
-      #@_displayMarksForPanes()
       @subscriptions.add pane.onDidChangeActiveItem (item) =>
         # This can be undefined if the pane closes.
+        return unless item and item instanceof TextEditor
         console.log "Pane", pane, "changed Active item", item?.getPath()
         @marks.regenerate()
 
