@@ -42,7 +42,6 @@ shouldParse = (scopes) ->
 
   return true
 
-
 ###*
 Return a dictionary of symbols to lists of positions (as a `Point`)
 Eg, `{foo: [(0, 0), (0, 40), (3, 5), ...]}`, where `(x, y)` represents
@@ -53,7 +52,7 @@ module.exports = class Symbols
     @index = {}
 
   generate: (editor) ->
-    editor = editor
+    editor = editor or atom.workspace.getActiveTextEditor()
     filepath = editor.getPath()
     symbols = Symbols.parseSymbols editor.getGrammar(), editor.getText()
     @index[filepath] = symbols
@@ -76,9 +75,9 @@ Symbols.parseSymbols = (grammar, text) ->
         syms = findSymbolsInToken token
         for symbol in syms
           name = symbol.name
-          # FIXME HACK: constructor is a property of symbols already. Bad JS!
-          continue if name is 'constructor'
-          symbols[name] = [] unless symbols[name]
+          # Must use hasOwnProperty to avoid false positives for 'constructor', 'hasOwnProperty', etc.
+          # Must use Obj's, since we might override symbol.hasOwnProperty
+          symbols[name] = [] unless Object.prototype.hasOwnProperty.call symbols, name
           symbols[name].push new Point(linenum, offset + symbol.offsetMod)
         offset +=  token.value.length
     console.log "Parsing symbols took #{Date.now() - tick} ms"

@@ -87,3 +87,14 @@ describe 'parseSymbols', ->
       expectSymbolLength symbols, 2
       expectSymbol symbols, 'a', [ [0, 0] ]
       expectSymbol symbols, 'b', [ [1, 0] ]
+
+    it 'should handle built in object names like hasOwnProperty', ->
+      symbols = parseSymbols grammar, 'var __hasProp = {}.hasOwnProperty;'
+      expectSymbolLength symbols, 2
+      expectSymbol symbols, '__hasProp', [ [0, 4] ]
+      expectSymbol symbols, 'hasOwnProperty', [ [0, 19] ]
+
+    it 'should handle built in object names like constructor', ->
+      symbols = parseSymbols grammar, 'var constructor = function () {}'
+      expectSymbolLength symbols, 1
+      expectSymbol symbols, 'constructor', [ [0, 4] ]

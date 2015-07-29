@@ -1,4 +1,4 @@
-len = (obj) ->
+exports.len = len = (obj) ->
   count = 0
   count += 1 for k of obj
   return count
