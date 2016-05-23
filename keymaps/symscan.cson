@@ -7,7 +7,7 @@
 
 # For more detailed documentation see
 # https://atom.io/docs/latest/behind-atom-keymaps-in-depth
-'atom-workspace':
+'atom-text-editor':
   'ctrl-alt-f': 'symscan:firstSymbol'
   'ctrl-alt-b': 'symscan:prevSymbol'
   'ctrl-alt-n': 'symscan:nextSymbol'
