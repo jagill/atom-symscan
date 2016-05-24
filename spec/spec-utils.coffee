@@ -1,3 +1,5 @@
+{SymbolIndex} = require '../lib/symbols'
+
 exports.len = len = (obj) ->
   count = 0
   count += 1 for k of obj
@@ -17,3 +19,10 @@ exports.expectSymbol = (symbols, name, positions) ->
     fp = foundPositions[i]
     expect(fp.row).toBe p[0]
     expect(fp.column).toBe p[1]
+
+exports.checkSymbols = (text, grammar, expected) ->
+  symbols = new SymbolIndex()
+  fpath = 'x'
+  symbols.parse fpath, text, grammar
+  results = symbols.findAllPositions(fpath)
+  expect(results).toEqual(expected)

@@ -2,6 +2,7 @@ SymscanView = require './symscan-view'
 {CompositeDisposable, Point, Range, TextEditor} = require 'atom'
 Symbols = require './symbol-generator'
 {SymbolMarks} = require './symbol-marks'
+utils = require './utils'
 
 wordRe = /\w+/
 
@@ -83,12 +84,12 @@ module.exports = Symscan =
     editor = atom.workspace.getActivePaneItem()
     symbols = @symbols.retrieve word, editor
     currentPos = editor.getCursorBufferPosition()
-    prevNext = Symbols.findPrevNext currentPos, symbols
+    prevNext = utils.findPrevNext currentPos, symbols
     if prev
       pos = prevNext.prev
       if pos and currentPos.isLessThanOrEqual(endOfWord(pos, word))
         # We're inside this word, let's actually go to two previous.
-        twoPrev = Symbols.findPrevNext(pos, symbols).prev
+        twoPrev = utils.findPrevNext(pos, symbols).prev
         pos = twoPrev or pos
     else
       pos = prevNext.next

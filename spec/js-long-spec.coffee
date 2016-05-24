@@ -1,5 +1,5 @@
 fs = require 'fs'
-{parseSymbols} = require '../lib/symbol-generator'
+{SymbolIndex} = require '../lib/symbols'
 {getGrammar, expectSymbol, expectSymbolLength, len} = require './spec-utils'
 
 FILE_PATH = './data/pince.js'
@@ -348,6 +348,10 @@ describe 'parseSymbols', ->
     grammar = getGrammar 'js'
 
   it 'should parse the long file correctly', ->
-    symbols = parseSymbols grammar, text
-    expect(len(symbols) > 1).toBe(true);
+    symbols = new SymbolIndex()
+    fpath = 'x'
+    symbols.parse fpath, text, grammar
+
+    results = symbols.findAllPositions(fpath)
+    expect(len(results) > 1).toBe(true);
     # TODO Do better checks for symbols in the text

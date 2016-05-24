@@ -1,5 +1,25 @@
-{findPrevNext} = require '../lib/symbol-generator'
+{insertOrdered, findPrevNext} = require '../lib/utils'
 {Point} = require 'atom'
+
+describe 'insertOrdered', ->
+  it 'should insert an object into an empty array', ->
+    a = []
+    p = new Point(2, 4)
+    insertOrdered(p, a)
+    expect(a.length).toBe(1)
+    expect(a[0]).toBe(p)
+
+  it 'should insert a sequence, ordering it', ->
+    a = []
+    p0 = new Point(0, 0)
+    p1 = new Point(2, 4)
+    p2 = new Point(2, 7)
+    p3 = new Point(3, 1)
+    insertOrdered(p2, a)
+    insertOrdered(p1, a)
+    insertOrdered(p3, a)
+    insertOrdered(p0, a)
+    expect(a).toEqual([p0, p1, p2, p3])
 
 describe 'findPrevNext', ->
   p = null
